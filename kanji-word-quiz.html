@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韓国漢字音クイズ｜한자음 단어 퀴즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Noto+Serif+KR:wght@400;600;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1410; --paper:#f7f1e6; --paper2:#efe6d3;
+    --crimson:#c8362f; --crimson-d:#9e241f; --gold:#d99a2b;
+    --jade:#4a7c59; --jade-l:#7fae87; --line:#d8c9ab;
+    --shadow:rgba(60,40,20,.18);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:'Zen Maru Gothic',sans-serif; color:var(--ink);
+    background:
+      radial-gradient(circle at 12% 18%, rgba(216,154,43,.10), transparent 42%),
+      radial-gradient(circle at 88% 82%, rgba(74,124,89,.10), transparent 42%),
+      repeating-linear-gradient(45deg, rgba(0,0,0,.012) 0 2px, transparent 2px 9px),
+      var(--paper);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:22px 16px 60px;
+  }
+  header{width:100%;max-width:720px;text-align:center;margin-bottom:18px}
+  .seal{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:54px;height:54px;border-radius:14px;
+    background:linear-gradient(155deg,var(--crimson),var(--crimson-d));
+    color:#fff;font-family:'Noto Serif KR',serif;font-weight:900;font-size:1.7rem;
+    box-shadow:0 6px 14px rgba(158,36,31,.4), inset 0 2px 4px rgba(255,255,255,.25);
+    transform:rotate(-4deg);margin-bottom:8px;
+  }
+  h1{font-family:'Black Han Sans','Zen Maru Gothic',sans-serif;font-size:1.9rem;letter-spacing:.04em;line-height:1.15;color:var(--crimson-d)}
+  h1 .jp{display:block;font-family:'Zen Maru Gothic';font-weight:700;font-size:.92rem;color:var(--jade);letter-spacing:.1em;margin-top:6px}
+  .subtitle{font-size:.82rem;color:#6f6354;margin-top:6px;letter-spacing:.05em}
+
+  .topbar{width:100%;max-width:720px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .pbar-wrap{flex:1;height:12px;background:var(--paper2);border-radius:99px;overflow:hidden;box-shadow:inset 0 1px 3px var(--shadow);border:1px solid var(--line)}
+  .pbar{height:100%;width:0;background:linear-gradient(90deg,var(--jade-l),var(--jade));border-radius:99px;transition:width .45s cubic-bezier(.16,1,.3,1)}
+  .score-pill{font-weight:700;font-size:.85rem;background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:6px 14px;white-space:nowrap;box-shadow:0 2px 5px var(--shadow)}
+  .score-pill b{color:var(--crimson)}
+
+  .card{
+    width:100%;max-width:720px;background:#fffdf8;border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 18px 40px -18px var(--shadow), 0 2px 0 #fff inset;
+    padding:30px 28px 26px;position:relative;overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--crimson),var(--gold),var(--jade))}
+  .qmeta{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .qnum{font-weight:700;color:var(--jade);font-size:.85rem;letter-spacing:.08em}
+  .qtag{font-size:.72rem;background:var(--paper2);color:#7a6c54;border-radius:8px;padding:4px 10px;font-weight:700;border:1px solid var(--line)}
+
+  .prompt{text-align:center;margin:6px 0 26px}
+  .prompt .lead{font-size:.92rem;color:#6f6354;margin-bottom:16px}
+  .word{
+    font-family:'Noto Serif KR',serif;font-weight:900;font-size:4rem;line-height:1;color:var(--ink);
+    display:inline-block;padding:0 8px;text-shadow:2px 3px 0 rgba(200,54,47,.12);
+  }
+  .reading{margin-top:14px}
+  .reading .jp-read{font-size:1.7rem;font-weight:700;color:var(--crimson);letter-spacing:.05em}
+  .reading .mean{display:block;font-size:.85rem;color:#9a8b73;margin-top:4px;letter-spacing:.04em}
+  .ask{font-size:.98rem;font-weight:700;margin-top:18px;color:var(--ink)}
+  .ask em{color:var(--crimson);font-style:normal;border-bottom:3px solid var(--gold)}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:540px){.choices{grid-template-columns:1fr}.word{font-size:3.1rem}h1{font-size:1.55rem}}
+  .choice{
+    font-family:'Noto Serif KR','Zen Maru Gothic',serif;font-size:1.7rem;font-weight:600;color:var(--ink);
+    background:#fff;border:2px solid var(--line);border-radius:14px;padding:18px 12px;cursor:pointer;
+    text-align:center;position:relative;transition:transform .12s, box-shadow .15s, border-color .15s, background .15s;
+    box-shadow:0 3px 0 var(--paper2);user-select:none;
+  }
+  .choice .idx{position:absolute;top:8px;left:11px;font-family:'Zen Maru Gothic';font-size:.72rem;font-weight:700;color:#bdae93}
+  .choice:hover:not(:disabled){transform:translateY(-2px);border-color:var(--gold);box-shadow:0 6px 0 var(--paper2)}
+  .choice:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 var(--paper2)}
+  .choice:disabled{cursor:default}
+  .choice.correct{background:linear-gradient(160deg,#eaf6ec,#d6efdb);border-color:var(--jade);color:var(--jade);animation:pop .35s}
+  .choice.wrong{background:linear-gradient(160deg,#fdeceb,#fbdcda);border-color:var(--crimson);color:var(--crimson-d)}
+  .choice.muted{opacity:.45}
+  @keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
+
+  .explain{margin-top:20px;border-radius:16px;overflow:hidden;border:1.5px solid var(--line);background:#fff;max-height:0;opacity:0;transition:max-height .5s ease, opacity .4s}
+  .explain.show{max-height:760px;opacity:1}
+  .explain-head{display:flex;align-items:center;gap:9px;padding:12px 18px;font-weight:700;font-size:.95rem}
+  .explain-head.ok{background:linear-gradient(90deg,#e7f4ea,#f3faf4);color:var(--jade)}
+  .explain-head.ng{background:linear-gradient(90deg,#fbe9e8,#fdf4f3);color:var(--crimson-d)}
+  .explain-head .mk{font-size:1.3rem}
+  .explain-body{padding:14px 18px 18px;font-size:.9rem;line-height:1.85;color:#4a4034}
+  .explain-body .ko{font-family:'Noto Serif KR',serif;font-weight:600;color:var(--crimson-d);background:rgba(216,154,43,.14);padding:1px 7px;border-radius:6px}
+  .rule-chip{display:inline-block;font-size:.74rem;font-weight:700;color:#fff;background:var(--jade);padding:3px 10px;border-radius:7px;margin-bottom:10px;letter-spacing:.03em}
+  .breakdown{font-family:'Zen Maru Gothic';background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:.92rem;line-height:1.9;color:#5a4f40}
+  .breakdown .syl{display:inline-block;margin-right:6px}
+  .breakdown b{color:var(--crimson)}
+
+  .related-words{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+  .related-label{font-size:.78rem;font-weight:700;color:#9a8b73;margin-bottom:10px;letter-spacing:.05em}
+  .rel-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .rel-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 14px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:82px;cursor:default;transition:transform .12s,box-shadow .12s}
+  .rel-card:hover{transform:translateY(-2px);box-shadow:0 4px 10px var(--shadow)}
+  .rel-kanji{font-family:'Noto Serif KR',serif;font-size:1.05rem;font-weight:700;color:var(--ink)}
+  .rel-jp{font-size:.67rem;color:#9a8b73;margin-top:1px}
+  .rel-ko{font-size:.88rem;font-weight:700;color:var(--crimson-d);font-family:'Noto Serif KR',serif}
+
+  /* ── タブナビゲーション ── */
+  .tab-bar{width:100%;max-width:720px;display:flex;gap:10px;margin-bottom:16px}
+  .tab{flex:1;font-family:'Zen Maru Gothic';font-weight:700;font-size:.9rem;padding:12px 8px;border:2px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;color:#7a6c54;transition:all .18s;letter-spacing:.04em}
+  .tab.active{background:linear-gradient(155deg,var(--crimson),var(--crimson-d));color:#fff;border-color:transparent;box-shadow:0 4px 14px -3px rgba(158,36,31,.45)}
+  .tab:hover:not(.active){border-color:var(--gold);color:var(--ink);transform:translateY(-1px)}
+  /* ── 学習タブ：レッスンナビ ── */
+  .lesson-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .lesson-btn{font-family:'Zen Maru Gothic';font-weight:700;font-size:.8rem;padding:10px 14px 9px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;color:#7a6c54;transition:all .15s;display:flex;flex-direction:column;align-items:center;line-height:1.3;text-align:center;min-width:80px}
+  .lesson-btn span{font-size:.68rem;color:#9a8b73;font-weight:500}
+  .lesson-btn.active{background:linear-gradient(155deg,var(--jade-l),var(--jade));color:#fff;border-color:transparent;box-shadow:0 4px 10px -3px rgba(74,124,89,.45)}
+  .lesson-btn.active span{color:rgba(255,255,255,.85)}
+  .lesson-btn:hover:not(.active){border-color:var(--jade-l);transform:translateY(-1px)}
+  /* ── レッスンパネル ── */
+  .lesson-panel{width:100%;background:#fffdf8;border:1px solid var(--line);border-radius:22px;padding:26px 24px 28px;box-shadow:0 18px 40px -18px var(--shadow),0 2px 0 #fff inset;position:relative;overflow:hidden}
+  .lesson-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--jade),var(--gold),var(--crimson))}
+  .lesson-title{font-family:'Black Han Sans','Zen Maru Gothic',sans-serif;font-size:1.3rem;color:var(--jade);margin-bottom:6px}
+  .lesson-sub{font-size:.84rem;color:#9a8b73;margin-bottom:18px;line-height:1.65}
+  /* ── 対応表 ── */
+  .corr-table{width:100%;border-collapse:collapse;margin:4px 0 18px;font-size:.85rem}
+  .corr-table th{background:var(--paper2);color:#5a4f40;font-weight:700;padding:8px 10px;text-align:left;border:1px solid var(--line);font-size:.76rem;letter-spacing:.04em}
+  .corr-table td{padding:9px 10px;border:1px solid var(--line);vertical-align:middle;line-height:1.55}
+  .corr-table tr:nth-child(even) td{background:rgba(239,230,211,.3)}
+  .cn{color:var(--jade);font-weight:700;font-size:.78rem}
+  .ck{font-family:'Noto Serif KR',serif;font-weight:700;font-size:1rem;color:var(--crimson-d)}
+  .cj{font-family:'Zen Maru Gothic';font-size:.98rem;color:var(--ink);font-weight:700}
+  .ce{font-size:.8rem;color:#6f6354}
+  .ce b{font-family:'Noto Serif KR',serif;color:var(--ink);font-weight:700}
+  /* ── ノートボックス ── */
+  .note-box{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:13px 16px;margin-top:2px;font-size:.84rem;line-height:1.85;color:#5a4f40}
+  .note-box ul{margin-left:16px}
+  .note-box li{margin-bottom:3px}
+  .note-lbl{display:inline-block;font-size:.72rem;font-weight:700;background:var(--jade);color:#fff;padding:2px 9px;border-radius:6px;margin-bottom:8px;letter-spacing:.04em}
+  /* ── 歴史カード ── */
+  .hist-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .hist-card{border-left:4px solid var(--jade);padding:10px 14px;background:rgba(127,174,135,.07);border-radius:0 10px 10px 0;font-size:.84rem;line-height:1.8;color:#4a4034}
+  .hist-q{font-weight:700;color:var(--jade);margin-bottom:3px;font-size:.88rem}
+  /* ── 練習問題 ── */
+  .prac-part{margin-bottom:22px}
+  .prac-head{font-family:'Black Han Sans';font-size:.98rem;color:var(--crimson-d);margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--line)}
+  .prac-q{font-size:.85rem;line-height:1.8;color:#4a4034;padding:7px 0 6px;border-bottom:1px dotted var(--line);display:flex;gap:10px}
+  .prac-q:last-child{border-bottom:none}
+  .pn{min-width:22px;font-weight:700;color:var(--jade);font-size:.82rem;padding-top:1px}
+  .ans-toggle-wrap{margin-top:16px;text-align:center}
+  .ans-toggle{font-family:'Zen Maru Gothic';font-weight:700;font-size:.88rem;padding:11px 24px;border:2px solid var(--jade);border-radius:11px;background:#fff;color:var(--jade);cursor:pointer;transition:all .15s}
+  .ans-toggle:hover{background:var(--jade);color:#fff}
+  .ans-box{margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 18px;font-size:.83rem;line-height:1.95;color:#4a4034;display:none}
+  .ans-box.open{display:block;animation:fade .4s}
+  .ai{display:flex;gap:8px;padding:3px 0;border-bottom:1px dotted var(--line)}
+  .ai:last-child{border-bottom:none}
+  .an{min-width:26px;font-weight:700;color:var(--jade);font-size:.8rem}
+  .at{font-family:'Noto Serif KR',serif;font-weight:600;color:var(--crimson-d)}
+  /* 韓国語読みのインラインタグ */
+  .kr{font-family:'Noto Serif KR',serif;font-weight:700;color:var(--crimson-d);font-size:.9em}
+  /* 練習クイズ */
+  .pq-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+  .pq-q{font-size:.9rem;font-weight:700;color:var(--ink);margin-bottom:12px;line-height:1.65}
+  .pq-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:480px){.pq-choices{grid-template-columns:1fr}}
+  .pq-btn{font-family:'Noto Serif KR','Zen Maru Gothic',serif;font-size:.9rem;font-weight:600;padding:11px 12px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;color:var(--ink);transition:all .15s;text-align:center;line-height:1.4}
+  .pq-btn:hover:not(:disabled){border-color:var(--gold);background:rgba(217,154,43,.07)}
+  .pq-btn.pq-correct{background:linear-gradient(160deg,#eaf6ec,#d6efdb);border-color:var(--jade);color:var(--jade);animation:pop .35s}
+  .pq-btn.pq-wrong{background:linear-gradient(160deg,#fdeceb,#fbdcda);border-color:var(--crimson);color:var(--crimson-d)}
+  .pq-btn.pq-muted{opacity:.4}
+  .pq-btn:disabled{cursor:default}
+  .pq-hint{margin-top:10px;font-size:.82rem;color:#5a4f40;background:var(--paper);border-left:4px solid var(--jade);padding:8px 12px;border-radius:0 8px 8px 0;line-height:1.75;animation:fade .3s}
+  .pq-hint.ok{border-left-color:var(--jade)}.pq-hint.ng{border-left-color:var(--crimson)}
+  .pq-hint .mark{font-weight:700;margin-right:4px}
+  .pq-score{font-weight:700;font-size:.88rem;color:var(--jade);margin-bottom:16px;padding:10px 14px;background:rgba(127,174,135,.1);border-radius:10px;border:1px solid rgba(127,174,135,.3)}
+
+  .nav{margin-top:18px;display:flex;justify-content:flex-end}
+  .btn{font-family:'Zen Maru Gothic';font-weight:700;font-size:.95rem;cursor:pointer;border:none;border-radius:12px;padding:13px 26px;color:#fff;background:linear-gradient(155deg,var(--crimson),var(--crimson-d));box-shadow:0 6px 14px -4px rgba(158,36,31,.55);transition:transform .12s}
+  .btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(1px)}.btn.hidden{display:none}
+
+  .result{display:none;text-align:center;padding:42px 24px}
+  .result.show{display:block;animation:fade .6s}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .ring{position:relative;width:160px;height:160px;margin:0 auto 18px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .pct b{font-family:'Black Han Sans';font-size:2.4rem;color:var(--ink)}
+  .ring .pct span{font-size:.78rem;color:#9a8b73}
+  .result .big{font-family:'Black Han Sans';font-size:3rem;color:var(--crimson);line-height:1}
+  .result .grade{font-size:1.2rem;font-weight:700;margin:14px 0 6px;color:var(--jade)}
+  .result .msg{font-size:.92rem;color:#6f6354;line-height:1.8;margin-bottom:24px}
+
+  footer{margin-top:26px;font-size:.74rem;color:#a89878;text-align:center;line-height:1.7;max-width:720px}
+</style>
+</head>
+<body>
+<header>
+  <div class="seal">韓</div>
+  <h1>韓国漢字音クイズ <span class="jp">日本語の単語から韓国漢字音を当てよう</span></h1>
+  <p class="subtitle">한·일 한자음 대응 법칙 트레이닝 ・ 単語編</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab active" id="tabStudy" onclick="switchTab('study')">学習</button>
+  <button class="tab" id="tabQuiz" onclick="switchTab('quiz')">クイズ</button>
+</div>
+
+<div id="studyPanel" style="width:100%;max-width:720px">
+  <div class="lesson-nav" id="lessonNav"></div>
+  <div class="lesson-panel" id="lessonContent"></div>
+</div>
+
+<div id="quizPanel" style="width:100%;max-width:720px;display:none">
+  <div class="topbar">
+    <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+    <div class="score-pill">正解 <b id="scoreNow">0</b> / <span id="qTotal">0</span></div>
+  </div>
+  <main class="card" id="card"></main>
+</div>
+
+<footer>
+  日本語母語話者のための韓国語学習ツール ・ 教材「한자 음독의 기본 틀」準拠<br>
+  読みは代表的な音読み・韓国漢字音です。
+</footer>
+
+<script>
+/* ============================================================
+   単語問題データ
+   word    : 漢字の単語
+   jp      : 日本語の音読み
+   mean    : 意味（補助）
+   answer  : 正しい韓国漢字音（ハングル）
+   wrong   : 誤答3つ（韓国漢字音）
+   rule    : 効いている対応法則
+   note    : 解説（日本語）
+   bd      : 文字ごとの対応の図解 [ "感=감", ... ]
+   ============================================================ */
+/* 各漢字に関連する単語マップ */
+const RELATED = {
+  "感":[{word:"感動",jp:"かんどう",ko:"감동"},{word:"感謝",jp:"かんしゃ",ko:"감사"},{word:"感情",jp:"かんじょう",ko:"감정"}],
+  "覚":[{word:"覚醒",jp:"かくせい",ko:"각성"},{word:"覚悟",jp:"かくご",ko:"각오"},{word:"自覚",jp:"じかく",ko:"자각"}],
+  "参":[{word:"参考",jp:"さんこう",ko:"참고"},{word:"参照",jp:"さんしょう",ko:"참조"},{word:"参拝",jp:"さんぱい",ko:"참배"}],
+  "加":[{word:"加速",jp:"かそく",ko:"가속"},{word:"加工",jp:"かこう",ko:"가공"},{word:"増加",jp:"ぞうか",ko:"증가"}],
+  "悪":[{word:"悪化",jp:"あっか",ko:"악화"},{word:"悪意",jp:"あくい",ko:"악의"},{word:"最悪",jp:"さいあく",ko:"최악"}],
+  "魔":[{word:"魔法",jp:"まほう",ko:"마법"},{word:"魔術",jp:"まじゅつ",ko:"마술"},{word:"魔力",jp:"まりょく",ko:"마력"}],
+  "緩":[{word:"緩慢",jp:"かんまん",ko:"완만"},{word:"緩衝",jp:"かんしょう",ko:"완충"},{word:"弛緩",jp:"しかん",ko:"이완"}],
+  "和":[{word:"平和",jp:"へいわ",ko:"평화"},{word:"調和",jp:"ちょうわ",ko:"조화"},{word:"和解",jp:"わかい",ko:"화해"}],
+  "大":[{word:"大学",jp:"だいがく",ko:"대학"},{word:"最大",jp:"さいだい",ko:"최대"},{word:"偉大",jp:"いだい",ko:"위대"}],
+  "会":[{word:"会話",jp:"かいわ",ko:"회화"},{word:"会社",jp:"かいしゃ",ko:"회사"},{word:"社会",jp:"しゃかい",ko:"사회"}],
+  "宅":[{word:"住宅",jp:"じゅうたく",ko:"주택"},{word:"帰宅",jp:"きたく",ko:"귀택"},{word:"宅地",jp:"たくち",ko:"택지"}],
+  "配":[{word:"配達",jp:"はいたつ",ko:"배달"},{word:"配分",jp:"はいぶん",ko:"배분"},{word:"配慮",jp:"はいりょ",ko:"배려"}],
+  "先":[{word:"先輩",jp:"せんぱい",ko:"선배"},{word:"先進",jp:"せんしん",ko:"선진"},{word:"優先",jp:"ゆうせん",ko:"우선"}],
+  "生":[{word:"生活",jp:"せいかつ",ko:"생활"},{word:"学生",jp:"がくせい",ko:"학생"},{word:"人生",jp:"じんせい",ko:"인생"}],
+  "市":[{word:"市民",jp:"しみん",ko:"시민"},{word:"都市",jp:"とし",ko:"도시"},{word:"市内",jp:"しない",ko:"시내"}],
+  "場":[{word:"会場",jp:"かいじょう",ko:"회장"},{word:"入場",jp:"にゅうじょう",ko:"입장"},{word:"登場",jp:"とうじょう",ko:"등장"}],
+  "地":[{word:"地域",jp:"ちいき",ko:"지역"},{word:"地球",jp:"ちきゅう",ko:"지구"},{word:"土地",jp:"とち",ko:"토지"}],
+  "下":[{word:"下降",jp:"かこう",ko:"하강"},{word:"以下",jp:"いか",ko:"이하"},{word:"下位",jp:"かい",ko:"하위"}],
+  "教":[{word:"教師",jp:"きょうし",ko:"교사"},{word:"教室",jp:"きょうしつ",ko:"교실"},{word:"宗教",jp:"しゅうきょう",ko:"종교"}],
+  "育":[{word:"体育",jp:"たいいく",ko:"체육"},{word:"育成",jp:"いくせい",ko:"육성"},{word:"発育",jp:"はついく",ko:"발육"}],
+  "留":[{word:"留意",jp:"りゅうい",ko:"유의"},{word:"留保",jp:"りゅうほ",ko:"유보"},{word:"抑留",jp:"よくりゅう",ko:"억류"}],
+  "学":[{word:"大学",jp:"だいがく",ko:"대학"},{word:"学習",jp:"がくしゅう",ko:"학습"},{word:"科学",jp:"かがく",ko:"과학"}],
+  "高":[{word:"高校",jp:"こうこう",ko:"고교"},{word:"高度",jp:"こうど",ko:"고도"},{word:"最高",jp:"さいこう",ko:"최고"}],
+  "速":[{word:"速度",jp:"そくど",ko:"속도"},{word:"迅速",jp:"じんそく",ko:"신속"},{word:"加速",jp:"かそく",ko:"가속"}],
+  "目":[{word:"注目",jp:"ちゅうもく",ko:"주목"},{word:"目標",jp:"もくひょう",ko:"목표"},{word:"項目",jp:"こうもく",ko:"항목"}],
+  "的":[{word:"目的地",jp:"もくてきち",ko:"목적지"},{word:"的確",jp:"てきかく",ko:"적확"},{word:"積極的",jp:"せっきょくてき",ko:"적극적"}],
+  "夫":[{word:"夫人",jp:"ふじん",ko:"부인"},{word:"夫妻",jp:"ふさい",ko:"부처"},{word:"農夫",jp:"のうふ",ko:"농부"}],
+  "婦":[{word:"婦人",jp:"ふじん",ko:"부인"},{word:"主婦",jp:"しゅふ",ko:"주부"},{word:"産婦",jp:"さんぷ",ko:"산부"}],
+  "運":[{word:"運動",jp:"うんどう",ko:"운동"},{word:"運命",jp:"うんめい",ko:"운명"},{word:"幸運",jp:"こううん",ko:"행운"}],
+  "営":[{word:"経営",jp:"けいえい",ko:"경영"},{word:"営業",jp:"えいぎょう",ko:"영업"},{word:"国営",jp:"こくえい",ko:"국영"}],
+  "言":[{word:"発言",jp:"はつげん",ko:"발언"},{word:"宣言",jp:"せんげん",ko:"선언"},{word:"証言",jp:"しょうげん",ko:"증언"}],
+  "語":[{word:"語学",jp:"ごがく",ko:"어학"},{word:"単語",jp:"たんご",ko:"단어"},{word:"国語",jp:"こくご",ko:"국어"}],
+  "内":[{word:"国内",jp:"こくない",ko:"국내"},{word:"内容",jp:"ないよう",ko:"내용"},{word:"案内",jp:"あんない",ko:"안내"}],
+  "陸":[{word:"上陸",jp:"じょうりく",ko:"상륙"},{word:"着陸",jp:"ちゃくりく",ko:"착륙"},{word:"陸軍",jp:"りくぐん",ko:"육군"}],
+  "半":[{word:"半島",jp:"はんとう",ko:"반도"},{word:"前半",jp:"ぜんはん",ko:"전반"},{word:"半額",jp:"はんがく",ko:"반액"}],
+  "分":[{word:"分野",jp:"ぶんや",ko:"분야"},{word:"区分",jp:"くぶん",ko:"구분"},{word:"成分",jp:"せいぶん",ko:"성분"}],
+  "切":[{word:"親切",jp:"しんせつ",ko:"친절"},{word:"切断",jp:"せつだん",ko:"절단"},{word:"一切",jp:"いっさい",ko:"일절"}],
+  "実":[{word:"実力",jp:"じつりょく",ko:"실력"},{word:"現実",jp:"げんじつ",ko:"현실"},{word:"実際",jp:"じっさい",ko:"실제"}],
+  "温":[{word:"温度",jp:"おんど",ko:"온도"},{word:"温泉",jp:"おんせん",ko:"온천"},{word:"気温",jp:"きおん",ko:"기온"}],
+  "存":[{word:"存在",jp:"そんざい",ko:"존재"},{word:"生存",jp:"せいぞん",ko:"생존"},{word:"保存",jp:"ほぞん",ko:"보존"}],
+};
+
+const DATA = [
+  {word:"感覚", jp:"かんかく", mean:"感覚", answer:"감각", wrong:["간각","감악","강갹"],
+   rule:"終声 ㄴㅁ→ん／ㄱ→く ・ 初声 ㄱ→か行 ・ 母音 ㅏ→あ",
+   note:"「かん」は ㄱ+ㅏ+(ん=ㄴ/ㅁ)。「かく」は末尾 <b>く</b> なのでパッチム <b>ㄱ</b>。感=감、覚=각。",
+   bd:["感(かん)=<b>감</b>","覚(かく)=<b>각</b>"]},
+
+  {word:"参加", jp:"さんか", mean:"参加", answer:"참가", wrong:["삼가","산가","참가아"].slice(0,3).concat([]).slice(0,3), 
+   wrong3:["삼가","산가","찬가"],
+   rule:"初声 ㅊ→さ行 ・ 終声 ㄴㅁ→ん ・ ㄱ→か行",
+   note:"「さん」は初声 ㅊ(さ行に対応)+ㅏ+ㅁ で 참。「か」は ㄱ+ㅏ で 가。ㅅㅈㅊ は日本語で さ行 になります。",
+   bd:["参(さん)=<b>참</b>","加(か)=<b>가</b>"]},
+
+  {word:"悪魔", jp:"あくま", mean:"悪魔", answer:"악마", wrong3:["안마","악바","약마"],
+   rule:"初声 ㅇ→無子音 ・ ㄱ→く ・ ㅁ→ま行",
+   note:"「あく」は子音なし(ㅇ)+ㅏ+パッチムㄱ で 악。「ま」は初声 ㅁ で 마。悪=악、魔=마。",
+   bd:["悪(あく)=<b>악</b>","魔(ま)=<b>마</b>"]},
+
+  {word:"緩和", jp:"かんわ", mean:"緩和（緩和）", answer:"완화", wrong3:["관화","완와","간화"],
+   rule:"初声 ㅇ→無子音/が行 ・ ㅎ→か行→わ ・ 終声ㄴ→ん",
+   note:"緩=완(ㅇ+ㅘ+ㄴ)。和は ㅎ初声ですが「わ」と読む7字の例外の一つ。緩和=かんわ。",
+   bd:["緩(かん)=<b>완</b>","和(わ)=<b>화</b>"]},
+
+  {word:"大会", jp:"たいかい", mean:"大会", answer:"대회", wrong3:["대외","태회","데회"].slice(0,3),
+   wrong3b:["대외","태회","데회"],
+   rule:"初声 ㄷ→た行 ・ 母音 ㅐ/ㅚ→あい ・ ㅎ→か行",
+   note:"「たい」は ㄷ+ㅐ で 대(母音ㅐはパッチム無しの あい)。「かい」は ㅎ+ㅚ で 회。大=대、会=회。",
+   bd:["大(たい)=<b>대</b>","会(かい)=<b>회</b>"]},
+
+  {word:"宅配", jp:"たくはい", mean:"宅配", answer:"택배", wrong3:["탁배","택패","덱배"],
+   rule:"初声 ㄷ→た行/ㅂ→は行 ・ ㄱ→く ・ ㅐ→あい",
+   note:"宅=택(ㅌ+ㅐ+ㄱ、末尾くはパッチムㄱ)。配=배(ㅂ初声はは行)。宅配=たくはい。",
+   bd:["宅(たく)=<b>택</b>","配(はい)=<b>배</b>"]},
+
+  {word:"先生", jp:"せんせい", mean:"先生", answer:"선생", wrong3:["산생","선셍","천생"].slice(0,3),
+   wrong3b:["산생","선셍","천생"],
+   rule:"初声 ㅅ→さ行 ・ 終声ㄴ→ん/ㅇ→長音化 ・ 母音ㅓ→えい系",
+   note:"先=선(ㅅ+ㅓ+ㄴ)。生=생、パッチム ㅇ は長音化し「せい」に。先生=せんせい。",
+   bd:["先(せん)=<b>선</b>","生(せい)=<b>생</b>"]},
+
+  {word:"市場", jp:"しじょう", mean:"市場（市場）", answer:"시장", wrong3:["사장","시잠","치장"],
+   rule:"初声 ㅅ→さ行/ㅈ→さ行(濁ってじ) ・ ㅏ+ㅇ→じょう",
+   note:"市=시(ㅅ+ㅣ で し)。場=장、ㅏ+パッチムㅇ は長音化して「じょう」に。ㅈが濁って じ/じょ になる例。",
+   bd:["市(し)=<b>시</b>","場(じょう)=<b>장</b>"]},
+
+  {word:"地下", jp:"ちか", mean:"地下", answer:"지하", wrong3:["지가","치하","제하"],
+   rule:"初声 ㅈ→さ行/た行(ちに) ・ ㅎ→か行(例外で け/か) ・ ㅏ→あ",
+   note:"地=지、初声ㅈは普通さ行ですが た行(ち)になる例。下=하、ㅎ初声。地下=ちか。",
+   bd:["地(ち)=<b>지</b>","下(か)=<b>하</b>"]},
+
+  {word:"教育", jp:"きょういく", mean:"教育", answer:"교육", wrong3:["규육","교옥","고육"].slice(0,3),
+   wrong3b:["규육","교옥","고육"],
+   rule:"母音 ㅛ→よう(きょう) ・ ㅇ→無子音 ・ ㄱ→く",
+   note:"教=교(ㄱ+ㅛ、ㅛはよう→きょう)。育=육(ㅇ+ㅠ+ㄱ)。教育=きょういく。",
+   bd:["教(きょう)=<b>교</b>","育(いく)=<b>육</b>"]},
+
+  {word:"留学", jp:"りゅうがく", mean:"留学", answer:"유학", wrong3:["유악","류학","유핵"],
+   rule:"母音 ㅠ→ゆう ・ ㅇ→無子音/が行 ・ ㄱ→く",
+   note:"留=유(ㅠはゆう、語頭で류→유)。学=학(ㅎ+ㅏ+ㄱ)。学はが行に濁り「がく」。留学=りゅうがく。",
+   bd:["留(りゅう)=<b>유(류)</b>","学(がく)=<b>학</b>"]},
+
+  {word:"高速", jp:"こうそく", mean:"高速", answer:"고속", wrong3:["구속","고석","코속"],
+   rule:"母音 ㅗ→お(う) ・ 初声ㄱ→か行/ㅅ→さ行 ・ ㄱ→く",
+   note:"高=고(ㄱ+ㅗ、ここでは こう と伸びる)。速=속(ㅅ+ㅗ+ㄱ)。高速=こうそく。",
+   bd:["高(こう)=<b>고</b>","速(そく)=<b>속</b>"]},
+
+  {word:"目的", jp:"もくてき", mean:"目的", answer:"목적", wrong3:["묵적","목척","목직"].slice(0,3),
+   wrong3b:["묵적","목척","목적이"],
+   rule:"初声 ㅁ→ま行 ・ ㄱ→く ・ ㅈ→さ行/た行(てき) ・ 母音ㅓ+ㄱ→えき",
+   note:"目=목(ㅁ+ㅗ+ㄱ、もく)。的=적(ㅈ+ㅓ+ㄱ、母音ㅓ+パッチムㄱ で てき)。目的=もくてき。",
+   bd:["目(もく)=<b>목</b>","的(てき)=<b>적</b>"]},
+
+  {word:"夫婦", jp:"ふうふ", mean:"夫婦", answer:"부부", wrong3:["보보","부보","후부"],
+   rule:"初声 ㅂ→は行 ・ 母音ㅜ→う ・ ㅂ+ㅜは長音化でふう",
+   note:"夫=부、婦=부。初声ㅂは は行(ふ)。前の母音の影響でふうふと伸びます。夫婦=ふうふ。",
+   bd:["夫(ふう)=<b>부</b>","婦(ふ)=<b>부</b>"]},
+
+  {word:"運営", jp:"うんえい", mean:"運営", answer:"운영", wrong3:["운염","운엥","운양"].slice(0,3),
+   wrong3b:["운염","운엥","운양"],
+   rule:"初声 ㅇ→無子音 ・ 終声ㄴ→ん ・ 母音ㅕ+ㅇ→えい(長音化)",
+   note:"運=운(ㅇ+ㅜ+ㄴ)。営=영(ㅇ+ㅕ+ㅇ、ㅕ+パッチムㅇ で えい)。運営=うんえい。",
+   bd:["運(うん)=<b>운</b>","営(えい)=<b>영</b>"]},
+
+  {word:"言語", jp:"げんご", mean:"言語", answer:"언어", wrong3:["연어","언오","엄어"],
+   rule:"初声 ㅇ→が行(例外・鼻濁音) ・ 終声ㄴ→ん ・ 母音ㅓ",
+   note:"言=언、語=어。どちらも初声ㅇですが、約20%が が行 に濁る例(げん・ご)。言語=げんご。",
+   bd:["言(げん)=<b>언</b>","語(ご)=<b>어</b>"]},
+
+  {word:"内陸", jp:"ないりく", mean:"内陸", answer:"내륙", wrong3:["네륙","내룩","내육"],
+   rule:"初声 ㄴ→な行/ㄹ→ら行 ・ 母音ㅐ→あい ・ ㄱ→く",
+   note:"内=내(ㄴ+ㅐ、な行)。陸=륙(ㄹ+ㅠ+ㄱ、ら行)。内陸=ないりく。",
+   bd:["内(ない)=<b>내</b>","陸(りく)=<b>륙</b>"]},
+
+  {word:"半分", jp:"はんぶん", mean:"半分", answer:"반분", wrong3:["판분","반푼","밤분"],
+   rule:"初声 ㅂㅍ→は行(濁ってば行も) ・ 終声ㄴ→ん",
+   note:"半=반(ㅂ+ㅏ+ㄴ、は行)。分=분(ㅂ+ㅜ+ㄴ、ここでは濁って ぶん)。半分=はんぶん。",
+   bd:["半(はん)=<b>반</b>","分(ぶん)=<b>분</b>"]},
+
+  {word:"切実", jp:"せつじつ", mean:"切実", answer:"절실", wrong3:["설실","절질","철실"],
+   rule:"終声 ㄹ→つ ・ 初声ㅊ→さ行/ㅅ→さ行 ・ 母音ㅓ/ㅣ",
+   note:"切=절(ㅊ+ㅓ+ㄹ)。実=실(ㅅ+ㅣ+ㄹ)。パッチム ㄹ は日本語で <b>つ</b> に。切実=せつじつ。",
+   bd:["切(せつ)=<b>절</b>","実(じつ)=<b>실</b>"]},
+
+  {word:"温存", jp:"おんぞん", mean:"温存", answer:"온존", wrong3:["옹존","온좀","언존"],
+   rule:"初声 ㅇ→無子音/ㅈ→さ行(濁ってぞ) ・ 終声ㄴ→ん",
+   note:"温=온(ㅇ+ㅗ+ㄴ)。存=존(ㅈ+ㅗ+ㄴ、濁って ぞん)。温存=おんぞん。",
+   bd:["温(おん)=<b>온</b>","存(ぞん)=<b>존</b>"]}
+];
+
+/* wrong の整備（古い暫定フィールドを正規化） */
+const QUESTIONS = DATA.map(d=>{
+  let wrong = d.wrong3 || d.wrong3b || d.wrong || [];
+  wrong = wrong.filter(w=>w && w!==d.answer);
+  return {word:d.word, jp:d.jp, mean:d.mean, answer:d.answer, wrong, rule:d.rule, note:d.note, bd:d.bd};
+});
+
+const total = QUESTIONS.length;
+let idx=0, score=0, locked=false;
+const card=document.getElementById('card');
+const pbar=document.getElementById('pbar');
+const scoreNow=document.getElementById('scoreNow');
+document.getElementById('qTotal').textContent=total;
+
+/* ハングル合成（誤答が足りない場合の保険） */
+function makeSyllable(){
+  const c=Math.floor(Math.random()*19), v=Math.floor(Math.random()*21);
+  const jp=[0,1,4,8,16,17,21]; const j=jp[Math.floor(Math.random()*jp.length)];
+  return String.fromCharCode(0xAC00 + c*588 + v*28 + j);
+}
+/* 答えと同じ字数のダミー単語を作る */
+function makeFakeWord(len){
+  let s=""; for(let i=0;i<len;i++) s+=makeSyllable(); return s;
+}
+
+/* 4択を作る：正解＋誤答3つ。足りなければ合成で補う */
+function buildChoices(q){
+  const set=[q.answer];
+  for(const w of q.wrong){ if(set.length>=4) break; if(w && !set.includes(w)) set.push(w); }
+  let guard=0;
+  while(set.length<4 && guard<300){ const f=makeFakeWord(q.answer.length); if(!set.includes(f)) set.push(f); guard++; }
+  set.length=Math.min(set.length,4);
+  for(let i=set.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[set[i],set[j]]=[set[j],set[i]];}
+  return set;
+}
+
+/* ============================================================
+   学習タブ ── タブ切り替え・レッスン描画
+   ============================================================ */
+function switchTab(which){
+  const sp=document.getElementById('studyPanel');
+  const qp=document.getElementById('quizPanel');
+  const ts=document.getElementById('tabStudy');
+  const tq=document.getElementById('tabQuiz');
+  if(which==='study'){
+    sp.style.display=''; qp.style.display='none';
+    ts.classList.add('active'); tq.classList.remove('active');
+  } else {
+    sp.style.display='none'; qp.style.display='';
+    tq.classList.add('active'); ts.classList.remove('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+}
+
+const LESSONS_CONTENT = {
+  1:`<h2 class="lesson-title">母音の対応法則（10+1法則）</h2>
+<p class="lesson-sub">韓国漢字音の母音と日本語音読みは規則的に対応しています。この表を覚えると、日本語の音読みから韓国漢字音の母音を予測できます。</p>
+<table class="corr-table"><thead><tr><th></th><th>韓国語母音</th><th>日本語対応</th><th>例</th></tr></thead><tbody>
+<tr><td><span class="cn">①</span></td><td><span class="ck">ㅏ / ㅘ</span></td><td><span class="cj">あ</span></td><td class="ce"><b>可能</b> かのう・<span class="kr">가능</span>&emsp;<b>感覚</b> かんかく・<span class="kr">감각</span></td></tr>
+<tr><td><span class="cn">②</span></td><td><span class="ck">ㅐ / ㅙ / ㅚ</span></td><td><span class="cj">あい</span></td><td class="ce"><b>海外</b> かいがい・<span class="kr">해외</span>&emsp;<b>快感</b> かいかん・<span class="kr">쾌감</span></td></tr>
+<tr><td><span class="cn">③</span></td><td><span class="ck">ㅑ</span></td><td><span class="cj">や</span></td><td class="ce"><b>野生</b> やせい・<span class="kr">야생</span>&emsp;<b>約束</b> やくそく・<span class="kr">약속</span></td></tr>
+<tr><td><span class="cn">④</span></td><td><span class="ck">ㅓ / ㅔ / ㅖ / ㅝ /（ㅕ）</span></td><td><span class="cj">えい</span></td><td class="ce"><b>西洋</b> せいよう・<span class="kr">서양</span>&emsp;<b>言語</b> げんご・<span class="kr">언어</span></td></tr>
+<tr><td><span class="cn">⑤</span></td><td><span class="ck">ㅕ（パッチム無）<br><small style="color:#9a8b73">ㅕ（パッチム有）</small></span></td><td><span class="cj">よ<br><small style="color:#9a8b73">え＋対応</small></span></td><td class="ce"><b>女性</b> じょせい・<span class="kr">여성</span>&emsp;<b>駅員</b> えきいん・<span class="kr">역원</span></td></tr>
+<tr><td><span class="cn">⑥</span></td><td><span class="ck">ㅣ / ㅢ / ㅟ / ㅞ</span></td><td><span class="cj">い</span></td><td class="ce"><b>異常</b> いじょう・<span class="kr">이상</span>&emsp;<b>帰国</b> きこく・<span class="kr">귀국</span></td></tr>
+<tr><td><span class="cn">⑦</span></td><td><span class="ck">ㅗ / ㅡ</span></td><td><span class="cj">お（う）</span></td><td class="ce"><b>古代</b> こだい・<span class="kr">고대</span>&emsp;<b>特別</b> とくべつ・<span class="kr">특별</span></td></tr>
+<tr><td><span class="cn">⑧</span></td><td><span class="ck">ㅛ</span></td><td><span class="cj">よう</span></td><td class="ce"><b>欲望</b> よくぼう・<span class="kr">욕망</span>&emsp;<b>要求</b> ようきゅう・<span class="kr">요구</span></td></tr>
+<tr><td><span class="cn">⑨</span></td><td><span class="ck">ㅜ</span></td><td><span class="cj">う</span></td><td class="ce"><b>運動</b> うんどう・<span class="kr">운동</span>&emsp;<b>武器</b> ぶき・<span class="kr">무기</span></td></tr>
+<tr><td><span class="cn">⑩</span></td><td><span class="ck">ㅠ</span></td><td><span class="cj">ゆう</span></td><td class="ce"><b>遊学</b> ゆうがく・<span class="kr">유학</span>&emsp;<b>流行</b> りゅうこう・<span class="kr">유행</span></td></tr>
+</tbody></table>
+<div class="note-box"><span class="note-lbl">注意点</span><ul>
+<li>사/자/차（ㅏ母音 ＋ ㅅ/ㅈ/ㅊ初声）は <b>し/じ/しゃ</b> と読む ─ <b>使用</b> しよう・<span class="kr">사용</span>, <b>事情</b> じじょう・<span class="kr">사정</span>, <b>社会</b> しゃかい・<span class="kr">사회</span></li>
+<li>ㅓ 系の「서/거」は よ でなく <b>しょ/きょ</b> になる場合が多い ─ <b>署名</b> しょめい・<span class="kr">서명</span>, <b>居住</b> きょじゅう・<span class="kr">거주</span></li>
+<li>ㅗ は <b>お</b> と <b>おう</b> の両方に対応 ─ <b>古代</b> こだい・<span class="kr">고대</span> ／ <b>高度</b> こうど・<span class="kr">고도</span></li>
+<li>「소/조」の ㅗ は <b>よう</b> と読む場合も多い ─ <b>小説</b> しょうせつ・<span class="kr">소설</span>, <b>朝食</b> ちょうしょく・<span class="kr">조식</span></li>
+</ul></div>`,
+
+  2:`<h2 class="lesson-title">初声の対応法則（7法則）</h2>
+<p class="lesson-sub">韓国漢字音の頭子音（初声）は、日本語音読みの頭子音と規則的に対応しています。</p>
+<table class="corr-table"><thead><tr><th></th><th>韓国語初声</th><th>日本語対応</th><th>例・例外</th></tr></thead><tbody>
+<tr><td><span class="cn">①</span></td><td><span class="ck">ㅇ</span></td><td><span class="cj">子音なし（母音のみ）</span></td><td class="ce"><b>悪意</b> あくい・<span class="kr">악의</span> ／ 例外（が行）：<b>言語</b> げんご・<span class="kr">언어</span></td></tr>
+<tr><td><span class="cn">②</span></td><td><span class="ck">ㄱ / ㅋ / ㅎ</span></td><td><span class="cj">か行</span></td><td class="ce"><b>可能</b> かのう・<span class="kr">가능</span> ／ 例外：<b>概念</b> がいねん・<span class="kr">개념</span></td></tr>
+<tr><td><span class="cn">③</span></td><td><span class="ck">ㅅ / ㅈ / ㅊ</span></td><td><span class="cj">さ行</span></td><td class="ce"><b>市場</b> しじょう・<span class="kr">시장</span> ／ 例外：<b>事情</b> じじょう・<span class="kr">사정</span>, <b>中断</b> ちゅうだん・<span class="kr">중단</span></td></tr>
+<tr><td><span class="cn">④</span></td><td><span class="ck">ㄷ / ㅌ</span></td><td><span class="cj">た行</span></td><td class="ce"><b>多数</b> たすう・<span class="kr">다수</span> ／ 例外：<b>大学</b> だいがく・<span class="kr">대학</span></td></tr>
+<tr><td><span class="cn">⑤</span></td><td><span class="ck">ㄴ → な行 / ㄹ → ら行</span></td><td><span class="cj">な行 ／ ら行</span></td><td class="ce"><b>内容</b> ないよう・<span class="kr">내용</span>&emsp;<b>陸上</b> りくじょう・<span class="kr">육상</span></td></tr>
+<tr><td><span class="cn">⑥</span></td><td><span class="ck">ㅂ / ㅍ</span></td><td><span class="cj">は行</span></td><td class="ce"><b>半分</b> はんぶん・<span class="kr">반분</span> ／ 例外：<b>倍率</b> ばいりつ・<span class="kr">배율</span></td></tr>
+<tr><td><span class="cn">⑦</span></td><td><span class="ck">ㅁ</span></td><td><span class="cj">ま行またはば行</span></td><td class="ce"><b>問題</b> もんだい・<span class="kr">문제</span>&emsp;<b>牧場</b> ぼくじょう・<span class="kr">목장</span></td></tr>
+</tbody></table>
+<div class="note-box"><span class="note-lbl">的中率と例外</span><ul>
+<li><b>ㅅ/ㅈ/ㅊ は的中率が約60%</b> と低い ─ 例外を必ず確認
+  <ul style="margin-top:4px">
+    <li>ㅅ/ㅈ が <b>ざ行</b> になる場合 15〜20%（<b>事情</b> じじょう・<span class="kr">사정</span>, <b>増加</b> ぞうか・<span class="kr">증가</span>）</li>
+    <li>ㅈ/ㅊ が <b>た行（特に ち）</b> になる場合 18〜25%（<b>長期</b> ちょうき・<span class="kr">장기</span>, <b>中断</b> ちゅうだん・<span class="kr">중단</span>）</li>
+  </ul>
+</li>
+<li>ㄷ/ㅌ が <b>だ行</b> になる場合 約20%以上（特に도・독・동 系: <b>大学</b> だいがく・<span class="kr">대학</span>, <b>同時</b> どうじ・<span class="kr">동시</span>）</li>
+<li>ㅂ が <b>ば行</b> になる場合 10〜15%（<b>倍率</b> ばいりつ・<span class="kr">배율</span>, <b>便利</b> べんり・<span class="kr">편리</span>）</li>
+<li>ㅁ は <b>ま行とば行が同程度</b> の割合、1字に両方ある場合も（<b>問題</b> もんだい・<span class="kr">문제</span> ／ <b>牧場</b> ぼくじょう・<span class="kr">목장</span>）</li>
+<li>ㅋ は <b>快感</b> かいかん・<span class="kr">쾌감</span> が代表的な1語</li>
+</ul></div>`,
+
+  3:`<h2 class="lesson-title">パッチムの対応法則（5+1法則）</h2>
+<p class="lesson-sub">韓国漢字音のパッチム（받침・終声）は、日本語音読みの末尾音と規則的に対応しています。</p>
+<table class="corr-table"><thead><tr><th></th><th>韓国語パッチム</th><th>日本語対応</th><th>例</th></tr></thead><tbody>
+<tr><td><span class="cn">①</span></td><td><span class="ck">ㄱ</span></td><td><span class="cj">く <small style="font-weight:normal;color:#9a8b73">（ㅓ/ㅕ母音 → えき傾向）</small></span></td><td class="ce"><b>各地</b> かくち・<span class="kr">각지</span> ／ <b>学期</b> がっき・<span class="kr">학기</span></td></tr>
+<tr><td><span class="cn">②</span></td><td><span class="ck">ㄴ / ㅁ</span></td><td><span class="cj">ん</span></td><td class="ce"><b>新聞</b> しんぶん・<span class="kr">신문</span>&emsp;<b>音楽</b> おんがく・<span class="kr">음악</span></td></tr>
+<tr><td><span class="cn">③</span></td><td><span class="ck">ㄹ</span></td><td><span class="cj">つ（一部 ち）</span></td><td class="ce"><b>切断</b> せつだん・<span class="kr">절단</span> ／ 例外：<b>一致</b> いっち・<span class="kr">일치</span></td></tr>
+<tr><td><span class="cn">④</span></td><td><span class="ck">ㅂ</span></td><td><span class="cj">長音化（う ／ い）</span></td><td class="ce"><b>押収</b> おうしゅう・<span class="kr">압수</span>&emsp;<b>集中</b> しゅうちゅう・<span class="kr">집중</span></td></tr>
+<tr><td><span class="cn">⑤</span></td><td><span class="ck">ㅇ</span></td><td><span class="cj">長音化（う ／ い）</span></td><td class="ce"><b>想像</b> そうぞう・<span class="kr">상상</span>&emsp;<b>政治</b> せいじ・<span class="kr">정치</span></td></tr>
+</tbody></table>
+<div class="note-box"><span class="note-lbl">パッチム ㅇ / ㅂ の長音化ルール</span>
+<p style="margin-bottom:10px;font-size:.83rem">前の母音によって <b>う</b> になるか <b>い</b> になるかが決まります：</p>
+<table class="corr-table" style="margin:0 0 14px"><thead><tr><th>前の母音</th><th>長音化</th><th>例</th></tr></thead><tbody>
+<tr><td class="ce">ㅏ/ㅐ/ㅘ/ㅚ/ㅗ/ㅡ 系</td><td><span class="cj">おう</span></td><td class="ce"><b>中央</b> ちゅうおう・<span class="kr">중앙</span></td></tr>
+<tr><td class="ce">ㅣ/ㅑ/ㅛ 系</td><td><span class="cj">よう</span></td><td class="ce"><b>用途</b> ようと・<span class="kr">용도</span></td></tr>
+<tr><td class="ce">ㅜ/ㅠ 系</td><td><span class="cj">ゆう</span></td><td class="ce"><b>融合</b> ゆうごう・<span class="kr">융합</span></td></tr>
+<tr><td class="ce">ㅓ/ㅕ 系</td><td><span class="cj">えい</span></td><td class="ce"><b>英語</b> えいご・<span class="kr">영어</span></td></tr>
+</tbody></table>
+<p style="font-size:.83rem;margin-bottom:6px"><b>ㅂパッチムの例外</b>（一部は長音化せず あ/い/え段＋つ）：</p>
+<p class="ce" style="letter-spacing:.04em"><b>圧力</b> あつりょく・<span class="kr">압력</span>&emsp;<b>接続</b> せつぞく・<span class="kr">접속</span></p>
+</div>`,
+
+};
+
+const PRACTICE_QUIZ = {
+  p1:[
+    {q:'完（완）の日本語音読みは？',c:['かん','がん','けん','おん'],a:0,h:'完=완(ㅇ初声→母音のみ, ㅘ→わ, パッチムㄴ→ん)。かん。'},
+    {q:'大概（대개）の日本語音読みは？',c:['たいがい','だいかい','だいがい','たいかい'],a:0,h:'大=대(ㄷ初声→た行, ㅐ→あい)→たい。概=개(ㄱ初声→が行例外)→がい。'},
+    {q:'約束（약속）の日本語音読みは？',c:['やくそく','よくそく','やくさく','ようそく'],a:0,h:'約=약(ㅇ初声+ㅏ+ㄱパッチム→やく)。束=속(ㅅ初声→さ行, ㅗ+ㄱ→そく)。'},
+    {q:'計画（계획）の日本語音読みは？',c:['けいかく','けいかい','きゃくかく','かいかく'],a:0,h:'計=계(母音ㅖ→えい)→けい。画=획(ㅎ初声→か行, ㅚ+ㄱパッチム→かく)。'},
+    {q:'高（고）の日本語音読みは？',c:['こう','こ','かい','きょう'],a:0,h:'高=고(ㄱ初声→か行, ㅗ→お)。パッチムなし＋ㅗ母音で長音化→こう。'},
+    {q:'運（운）の日本語音読みは？',c:['うん','おん','いん','えん'],a:0,h:'運=운(ㅇ初声→母音のみ, ㅜ→う, パッチムㄴ→ん)→うん。'},
+    {q:'律（률）の日本語音読みは？',c:['りつ','りく','るつ','りん'],a:0,h:'律=률(ㄹ初声→ら行, ㅠ→ゆ→り, パッチムㄹ→つ)→りつ。'},
+    {q:'各（각）の日本語音読みは？',c:['かく','がく','かき','かん'],a:0,h:'各=각(ㄱ初声→か行, ㅏ→あ, パッチムㄱ→く)→かく。'},
+    {q:'切（절）の日本語音読みは？',c:['せつ','せく','せん','ぜつ'],a:0,h:'切=절(ㅈ初声→さ行[せ], ㅓ→え, パッチムㄹ→つ)→せつ。'},
+    {q:'心（심）の日本語音読みは？',c:['しん','じん','せん','しく'],a:0,h:'心=심(ㅅ初声→さ行[し], ㅣ→い, パッチムㅁ→ん)→しん。'},
+  ],
+  p2:[
+    {q:'韓国語パッチム ㄴ と ㅁ は日本語で共通して何になるか？',c:['ん','く','つ','う'],a:0,h:'ㄴ→ん（新聞 しんぶん・신문）, ㅁ→ん（心 しん・심）。どちらも鼻音で ん に対応。'},
+    {q:'韓国語パッチム ㄹ は基本的に何になるか？',c:['つ','く','ん','い'],a:0,h:'ㄹパッチムは古代中国語の[t]音。日本語は tu=つ として受け入れた（切断 せつだん・절단）。'},
+    {q:'「앙（ㅏ系母音 ＋ ㅇパッチム）」は日本語で何になるか？',c:['おう','あん','あう','えい'],a:0,h:'ㅏ系＋ㅇパッチム→おう（長音化）。中央 ちゅうおう・중앙 の 央（앙）が代表例。'},
+    {q:'初声の中で的中率が最も低い（約60%）グループはどれか？',c:['ㅅ/ㅈ/ㅊ','ㄱ/ㅋ/ㅎ','ㄷ/ㅌ','ㅂ/ㅍ'],a:0,h:'ㅅ/ㅈ/ㅊ はさ行・ざ行・た行 の3パターンに分かれるため的中率が約60%と最低。'},
+    {q:'日本語音読みの末尾に来ない仮名はどれか？',c:['な','く','ん','つ'],a:0,h:'末尾は う/い/く(き)/つ(ち)/ん の5種のみ。な行はパッチムに対応しない。'},
+  ],
+  p3:[
+    {q:'「사/자/차」がさ行でなく何になる場合があるか？',c:['ざ行（じ/ぞ）またはた行（ち）','さ行のみ','た行のみ','か行'],a:0,h:'事情→じじょう（ざ行）, 増加→ぞうか（ざ行）, 中断→ちゅうだん（た行）。的中率60%の原因。'},
+    {q:'多（다）→ た だが、度（도）が ど になる理由は？',c:['도/독/동 系はだ行になる例外グループ','パッチムの違いによる変化','母音ㅗの影響で濁音化','発音変化でランダムに濁る'],a:0,h:'大（대→だい）・度（도→ど）・毒（독→どく）・動（동→どう）。도/독/동 系はだ行の例外グループ。'},
+    {q:'木（목）が もく と ぼく 両方になる理由は？',c:['ㅁ初声はま行とば行が同程度の割合','地域や時代による揺れ','パッチムㄱの影響','単なる不規則変化'],a:0,h:'ㅁ初声は唯一 ま行（問題 もんだい）とば行（牧場 ぼくじょう）が同程度で、1字に両読みがある場合も。'},
+    {q:'福（복）の日本語音読みはどれか？',c:['ふく','こく','ほく','ぼく'],a:0,h:'福=복(ㅂ初声→は行, ㅗ→お, パッチムㄱ→く)→ふく。ㅂはは行が基本（ば行は例外）。'},
+    {q:'言語（언어）で「言」が げん になる理由は？',c:['ㅇ初声の約20%はが行（古代の鼻濁音[ŋ]由来）','ㄴ初声との混同','終声ㄴの影響','発音しやすさのための変化'],a:0,h:'古代中国語の発音が鼻濁音[ŋ]→日本語の鼻濁音が行として受け入れ。言=언→げん, 語=어→ご。'},
+  ]
+};
+
+let pqState = {};
+
+function renderPractice(part){
+  const qs = PRACTICE_QUIZ[part];
+  const st = pqState[part] || (pqState[part] = {score:0, done:new Map()});
+  const scoreHtml = `<div class="pq-score">正解 ${st.score} / ${qs.length}</div>`;
+  const items = qs.map((q,qi) => {
+    const picked = st.done.has(qi) ? st.done.get(qi) : null;
+    const answered = picked !== null;
+    const choices = q.c.map((ch,ci) => {
+      let cls = 'pq-btn';
+      if(answered){ if(ci===q.a) cls+=' pq-correct'; else if(ci===picked) cls+=' pq-wrong'; else cls+=' pq-muted'; }
+      return `<button class="${cls}" ${answered?'disabled':''} onclick="answerPQ(${qi},${ci},${ci===q.a},'${part}')">${ch}</button>`;
+    }).join('');
+    const hint = answered ? `<div class="pq-hint ${picked===q.a?'ok':'ng'}"><b>解説：</b>${q.h}</div>` : '';
+    return `<div class="pq-item"><div class="pq-q"><span class="pn">${qi+1}.</span> ${q.q}</div><div class="pq-choices">${choices}</div>${hint}</div>`;
+  }).join('');
+  document.getElementById('lessonContent').innerHTML = scoreHtml + items;
+}
+
+function answerPQ(qi, ci, correct, part){
+  const st = pqState[part] || (pqState[part] = {score:0, done:new Map()});
+  if(st.done.has(qi)) return;
+  st.done.set(qi, ci);
+  if(correct) st.score++;
+  renderPractice(part);
+}
+
+function showLesson(key){
+  document.querySelectorAll('.lesson-btn').forEach(b=>b.classList.remove('active'));
+  const btn = document.querySelector(`.lesson-btn[data-lesson="${key}"]`);
+  if(btn) btn.classList.add('active');
+  if(String(key).startsWith('p')){
+    renderPractice(key);
+  } else {
+    document.getElementById('lessonContent').innerHTML = LESSONS_CONTENT[key] || '';
+  }
+}
+
+(function initStudy(){
+  const nav = document.getElementById('lessonNav');
+  const ls = [
+    {k:1, t:'第1課', s:'母音の対応'},
+    {k:2, t:'第2課', s:'初声の対応'},
+    {k:3, t:'第3課', s:'パッチムの対応'},
+    {k:'p1', t:'練習1', s:'音読み変換'},
+    {k:'p2', t:'練習2', s:'法則の確認'},
+    {k:'p3', t:'練習3', s:'例外問題'},
+  ];
+  nav.innerHTML = ls.map(l=>`<button class="lesson-btn" data-lesson="${l.k}" onclick="showLesson('${l.k}')">${l.t}<span>${l.s}</span></button>`).join('');
+  document.querySelector('.lesson-btn').classList.add('active');
+  showLesson(1);
+})();
+
+function buildRelatedHTML(q){
+  const seen=new Set([q.word]);
+  const relWords=[];
+  for(const ch of q.word){
+    const list=RELATED[ch];
+    if(!list) continue;
+    for(const r of list){ if(!seen.has(r.word)){seen.add(r.word);relWords.push(r);} }
+  }
+  if(relWords.length===0) return '';
+  const cards=relWords.map(r=>`<div class="rel-card"><span class="rel-kanji">${r.word}</span><span class="rel-jp">${r.jp}</span><span class="rel-ko">${r.ko}</span></div>`).join('');
+  return `<div class="related-words"><div class="related-label">同じ漢字が使われている単語 ・ <span style="font-family:'Noto Serif KR',serif;font-weight:600">같은 한자가 쓰인 단어</span></div><div class="rel-grid">${cards}</div></div>`;
+}
+
+function render(){
+  const q=QUESTIONS[idx];
+  const choices=buildChoices(q);
+  locked=false;
+  pbar.style.width=(idx/total*100)+'%';
+  card.innerHTML=`
+    <div class="qmeta">
+      <span class="qnum">第 ${idx+1} 問 / ${total}</span>
+      <span class="qtag">単語 ・ 음독 → 한국 한자음</span>
+    </div>
+    <div class="prompt">
+      <div class="lead">この単語の <b>韓国漢字音(ハングル)</b> はどれ？</div>
+      <span class="word">${q.word}</span>
+      <div class="reading">
+        <span class="jp-read">${q.jp}</span>
+        <span class="mean">意味：${q.mean}</span>
+      </div>
+      <div class="ask">正しい <em>한국 한자음</em> を1つ選んでください</div>
+    </div>
+    <div class="choices" id="choices">
+      ${choices.map((c,i)=>`<button class="choice" data-val="${c}"><span class="idx">${i+1}</span>${c}</button>`).join('')}
+    </div>
+    <div class="explain" id="explain"></div>
+    <div class="nav"><button class="btn hidden" id="nextBtn"></button></div>
+  `;
+  card.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',()=>onPick(b,q)));
+}
+
+function onPick(btn,q){
+  if(locked) return; locked=true;
+  const correct=btn.dataset.val===q.answer;
+  if(correct){ score++; scoreNow.textContent=score; }
+  card.querySelectorAll('.choice').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.val===q.answer) b.classList.add('correct');
+    else if(b===btn) b.classList.add('wrong');
+    else b.classList.add('muted');
+  });
+  const ex=document.getElementById('explain');
+  ex.innerHTML=`
+    <div class="explain-head ${correct?'ok':'ng'}">
+      <span class="mk">${correct?'◎':'✕'}</span>
+      ${correct?'正解です！ 정답이에요!':`残念… 正解は <span class="ko" style="margin-left:4px">${q.answer}</span>`}
+    </div>
+    <div class="explain-body">
+      <span class="rule-chip">対応法則</span> ${q.rule}
+      <p style="margin-top:10px">${q.word}（${q.jp}）の韓国漢字音は <span class="ko">${q.answer}</span> です。${q.note}</p>
+      <div class="breakdown">${q.bd.map(x=>`<span class="syl">${x}</span>`).join(' ／ ')}</div>
+      ${buildRelatedHTML(q)}
+    </div>
+  `;
+  requestAnimationFrame(()=>ex.classList.add('show'));
+  const nb=document.getElementById('nextBtn');
+  nb.classList.remove('hidden');
+  nb.textContent=(idx===total-1)?'結果を見る ▶':'次の問題 ▶';
+  nb.onclick=()=>{ if(idx===total-1){showResult();} else {idx++;render();window.scrollTo({top:0,behavior:'smooth'});} };
+}
+
+function showResult(){
+  pbar.style.width='100%';
+  const pct=Math.round(score/total*100);
+  let grade,msg;
+  if(pct===100){grade='완벽! 만점이에요 🎉';msg='全問正解！ 한·일 한자음의 대응 감각이 완전히 잡혔네요.';}
+  else if(pct>=80){grade='훌륭해요 👏';msg='対応法則がしっかり身についています。間違えた単語の解説をもう一度確認しましょう。';}
+  else if(pct>=60){grade='좋아요, 거의 다 왔어요';msg='基本はOK。ㅅㅈㅊ系や濁る例外(が行・だ行・ば行)を重点的に復習すると伸びます。';}
+  else if(pct>=40){grade='조금만 더!';msg='母音・初声・終声の3つの対応を見ながら、もう一度挑戦してみましょう。';}
+  else{grade='화이팅! 다시 도전해요';msg='まずはパッチムの対応 ㄱ→く / ㄴㅁ→ん / ㄹ→つ から覚えるのがおすすめです。';}
+  const C=2*Math.PI*70, off=C*(1-pct/100);
+  card.innerHTML=`
+    <div class="result show">
+      <div class="ring">
+        <svg width="160" height="160">
+          <circle cx="80" cy="80" r="70" fill="none" stroke="#e7dcc4" stroke-width="14"/>
+          <circle cx="80" cy="80" r="70" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" id="ringFill"/>
+          <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fae87"/><stop offset="1" stop-color="#c8362f"/></linearGradient></defs>
+        </svg>
+        <div class="pct"><b>${pct}</b><span>${score} / ${total} 正解</span></div>
+      </div>
+      <div class="big">${score}<span style="font-size:1.5rem;color:#bdae93">/${total}</span></div>
+      <div class="grade">${grade}</div>
+      <p class="msg">${msg}</p>
+      <button class="btn" id="again">もう一度挑戦 ・ 다시 풀기 ↻</button>
+    </div>`;
+  const rf=document.getElementById('ringFill');
+  requestAnimationFrame(()=>{rf.style.transition='stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1)';rf.style.strokeDashoffset=off;});
+  document.getElementById('again').onclick=()=>{idx=0;score=0;scoreNow.textContent=0;render();window.scrollTo({top:0,behavior:'smooth'});};
+}
+
+render();
+</script>
+</body>
+</html>
