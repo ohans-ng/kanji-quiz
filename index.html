@@ -177,6 +177,18 @@
   .nav{margin-top:18px;display:flex;justify-content:flex-end}
   .btn{font-family:'Zen Maru Gothic';font-weight:700;font-size:.95rem;cursor:pointer;border:none;border-radius:12px;padding:13px 26px;color:#fff;background:linear-gradient(155deg,var(--crimson),var(--crimson-d));box-shadow:0 6px 14px -4px rgba(158,36,31,.55);transition:transform .12s}
   .btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(1px)}.btn.hidden{display:none}
+  .mini-btn{font-family:'Zen Maru Gothic';font-weight:700;font-size:.8rem;cursor:pointer;border:1.5px solid var(--line);border-radius:10px;padding:7px 14px;color:var(--ink);background:#fff;box-shadow:0 2px 5px var(--shadow);transition:transform .12s,background .12s}
+  .mini-btn:hover{transform:translateY(-1px);background:#fff7e9}.mini-btn:active{transform:translateY(1px)}
+  .quiz-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+  .quiz-controls select{font-family:'Zen Maru Gothic';padding:7px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:.85rem;color:var(--ink);box-shadow:0 2px 5px var(--shadow)}
+  #auxView{background:#fffdf7;border:1.5px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 6px 18px -8px var(--shadow)}
+  #auxView h2{font-size:1.15rem;margin-bottom:16px;color:var(--ink)}
+  .rec-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:.85rem}
+  .rec-table th{text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);color:#7a6f5a;font-size:.78rem}
+  .rec-table td{padding:9px 10px;border-bottom:1px solid #eadfc6}
+  .rec-table tr.best td{background:#fff4d9}
+  .best-badge{background:var(--gold);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .aux-empty{color:#7a6f5a;font-size:.9rem;line-height:1.8;margin-bottom:20px}
 
   .result{display:none;text-align:center;padding:42px 24px}
   .result.show{display:block;animation:fade .6s}
@@ -215,7 +227,15 @@
     <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
     <div class="score-pill">正解 <b id="scoreNow">0</b> / <span id="qTotal">0</span></div>
   </div>
+  <div class="quiz-controls">
+    <label style="font-size:.8rem;color:#7a6f5a;font-weight:700">出題日 ・ 날짜</label>
+    <select id="dateSel"></select>
+    <span style="flex:1"></span>
+    <button class="mini-btn" onclick="renderHistory()">記録 ・ 기록</button>
+    <button class="mini-btn" onclick="renderWrongNotes()">오답노트</button>
+  </div>
   <main class="card" id="card"></main>
+  <div id="auxView" style="display:none"></div>
 </div>
 
 <footer>
@@ -279,7 +299,12 @@ const RELATED = {
   "存":[{word:"存在",jp:"そんざい",ko:"존재"},{word:"生存",jp:"せいぞん",ko:"생존"},{word:"保存",jp:"ほぞん",ko:"보존"}],
 };
 
-const DATA = [
+/* ============================================================
+   WORD_BANK : 日付ごとの20語バッチ。毎日Claudeが新しいバッチを追記し、
+   過去の出題は削除されず蓄積される。クイズは日付を選んで挑戦できる。
+   ============================================================ */
+const WORD_BANK = {
+  "2026-05-29": [
   {word:"感覚", jp:"かんかく", mean:"感覚", answer:"감각", wrong:["간각","감악","강갹"],
    rule:"終声 ㄴㅁ→ん／ㄱ→く ・ 初声 ㄱ→か行 ・ 母音 ㅏ→あ",
    note:"「かん」は ㄱ+ㅏ+(ん=ㄴ/ㅁ)。「かく」は末尾 <b>く</b> なのでパッチム <b>ㄱ</b>。感=감、覚=각。",
@@ -385,21 +410,46 @@ const DATA = [
    rule:"初声 ㅇ→無子音/ㅈ→さ行(濁ってぞ) ・ 終声ㄴ→ん",
    note:"温=온(ㅇ+ㅗ+ㄴ)。存=존(ㅈ+ㅗ+ㄴ、濁って ぞん)。温存=おんぞん。",
    bd:["温(おん)=<b>온</b>","存(ぞん)=<b>존</b>"]}
-];
+  ],
+};
 
 /* wrong の整備（古い暫定フィールドを正規化） */
-const QUESTIONS = DATA.map(d=>{
-  let wrong = d.wrong3 || d.wrong3b || d.wrong || [];
-  wrong = wrong.filter(w=>w && w!==d.answer);
-  return {word:d.word, jp:d.jp, mean:d.mean, answer:d.answer, wrong, rule:d.rule, note:d.note, bd:d.bd};
-});
+function normalizeBatch(arr){
+  return (arr||[]).map(d=>{
+    let wrong = d.wrong3 || d.wrong3b || d.wrong || [];
+    wrong = wrong.filter(w=>w && w!==d.answer);
+    return {word:d.word, jp:d.jp, mean:d.mean, answer:d.answer, wrong, rule:d.rule, note:d.note, bd:d.bd};
+  });
+}
 
-const total = QUESTIONS.length;
+let QUESTIONS = [];
+let total = 0;
 let idx=0, score=0, locked=false;
+let selectedDate = '';
+let currentWrong = [];           /* 今回の挑戦で間違えた単語 */
 const card=document.getElementById('card');
 const pbar=document.getElementById('pbar');
 const scoreNow=document.getElementById('scoreNow');
-document.getElementById('qTotal').textContent=total;
+
+/* ── 日付ユーティリティ ── */
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function bankDates(){ return Object.keys(WORD_BANK).sort(); }
+function resolveDate(pref){
+  const dates=bankDates();
+  if(!dates.length) return '';
+  if(dates.includes(pref)) return pref;
+  const t=todayStr();
+  const past=dates.filter(d=>d<=t);
+  return past.length ? past[past.length-1] : dates[dates.length-1];
+}
+
+/* ── localStorage 記録 ── */
+const REC_KEY='kqz_records_v1';
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(REC_KEY))||[]; }catch(e){ return []; } }
+function saveRecord(rec){ const a=loadRecords(); a.push(rec); try{ localStorage.setItem(REC_KEY, JSON.stringify(a)); }catch(e){} }
 
 /* ハングル合成（誤答が足りない場合の保険） */
 function makeSyllable(){
@@ -622,6 +672,7 @@ function onPick(btn,q){
   if(locked) return; locked=true;
   const correct=btn.dataset.val===q.answer;
   if(correct){ score++; scoreNow.textContent=score; }
+  else { currentWrong.push({word:q.word, jp:q.jp, mean:q.mean, answer:q.answer}); }
   card.querySelectorAll('.choice').forEach(b=>{
     b.disabled=true;
     if(b.dataset.val===q.answer) b.classList.add('correct');
@@ -650,6 +701,7 @@ function onPick(btn,q){
 
 function showResult(){
   pbar.style.width='100%';
+  saveRecord({quizDate:selectedDate, ts:Date.now(), score, total, wrong:currentWrong.slice()});
   const pct=Math.round(score/total*100);
   let grade,msg;
   if(pct===100){grade='완벽! 만점이에요 🎉';msg='全問正解！ 한·일 한자음의 대응 감각이 완전히 잡혔네요.';}
@@ -672,13 +724,94 @@ function showResult(){
       <div class="grade">${grade}</div>
       <p class="msg">${msg}</p>
       <button class="btn" id="again">もう一度挑戦 ・ 다시 풀기 ↻</button>
+      <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="mini-btn" onclick="renderHistory()">記録を見る ・ 기록</button>
+        <button class="mini-btn" onclick="renderWrongNotes()">오답노트</button>
+      </div>
     </div>`;
   const rf=document.getElementById('ringFill');
   requestAnimationFrame(()=>{rf.style.transition='stroke-dashoffset 1.1s cubic-bezier(.16,1,.3,1)';rf.style.strokeDashoffset=off;});
-  document.getElementById('again').onclick=()=>{idx=0;score=0;scoreNow.textContent=0;render();window.scrollTo({top:0,behavior:'smooth'});};
+  document.getElementById('again').onclick=()=>{idx=0;score=0;currentWrong=[];scoreNow.textContent=0;render();window.scrollTo({top:0,behavior:'smooth'});};
 }
 
-render();
+/* ============================================================
+   出題日選択 ・ 記録 ・ 오답노트
+   ============================================================ */
+function loadQuizForDate(dateKey){
+  selectedDate=dateKey;
+  QUESTIONS=normalizeBatch(WORD_BANK[dateKey]);
+  total=QUESTIONS.length;
+  document.getElementById('qTotal').textContent=total;
+  idx=0; score=0; currentWrong=[]; locked=false;
+  if(scoreNow) scoreNow.textContent=0;
+  backToQuiz();
+  render();
+}
+
+function showAux(html){
+  card.style.display='none';
+  const av=document.getElementById('auxView');
+  av.style.display=''; av.innerHTML=html;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function backToQuiz(){
+  const av=document.getElementById('auxView');
+  if(av){ av.style.display='none'; av.innerHTML=''; }
+  card.style.display='';
+}
+
+function renderHistory(){
+  const recs=loadRecords();
+  let body;
+  if(!recs.length){
+    body='<p class="aux-empty">まだ記録がありません。クイズを最後まで解くと記録されます。<br>아직 기록이 없습니다. 퀴즈를 끝까지 풀면 기록됩니다.</p>';
+  } else {
+    let bestI=0,bestPct=-1;
+    recs.forEach((r,i)=>{ const p=r.total?r.score/r.total:0; if(p>bestPct){bestPct=p;bestI=i;} });
+    const rows=recs.map((r,i)=>({r,i})).sort((a,b)=>b.r.ts-a.r.ts).map(({r,i})=>{
+      const pct=r.total?Math.round(r.score/r.total*100):0;
+      const dt=new Date(r.ts);
+      const when=dt.getFullYear()+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+String(dt.getDate()).padStart(2,'0')+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+      const badge=(i===bestI)?'<span class="best-badge">最高記録</span>':'';
+      return `<tr class="${i===bestI?'best':''}"><td>${when}</td><td>${r.quizDate}</td><td><b style="color:var(--crimson)">${r.score}/${r.total}</b> <small style="color:#9a8b73">(${pct}%)</small></td><td>${badge}</td></tr>`;
+    }).join('');
+    body=`<table class="rec-table"><thead><tr><th>挑戦日時</th><th>出題日</th><th>スコア</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  showAux(`<h2>記録 ・ 기록</h2>${body}<button class="btn" onclick="backToQuiz()">← クイズに戻る ・ 퀴즈로</button>`);
+}
+
+function renderWrongNotes(){
+  const recs=loadRecords();
+  const map=new Map();
+  recs.forEach(r=>(r.wrong||[]).forEach(w=>{
+    if(!map.has(w.word)) map.set(w.word,{word:w.word, jp:w.jp, mean:w.mean, answer:w.answer, count:0});
+    map.get(w.word).count++;
+  }));
+  const items=[...map.values()].sort((a,b)=>b.count-a.count);
+  let body;
+  if(!items.length){
+    body='<p class="aux-empty">間違えた単語はまだありません。<br>아직 틀린 단어가 없습니다.</p>';
+  } else {
+    body=`<p class="aux-empty" style="margin-bottom:14px">これまでに間違えた単語（×の数＝間違えた回数）・ 지금까지 틀린 단어</p>`+
+      `<div class="rel-grid">`+items.map(w=>
+        `<div class="rel-card"><span class="rel-kanji">${w.word}</span><span class="rel-jp">${w.jp||''}</span><span class="rel-ko">${w.answer}</span><span style="font-size:.7rem;font-weight:700;color:var(--crimson);margin-top:3px">×${w.count}</span></div>`
+      ).join('')+`</div>`;
+  }
+  showAux(`<h2>오답노트 ・ 間違えた単語</h2>${body}<button class="btn" style="margin-top:18px" onclick="backToQuiz()">← クイズに戻る ・ 퀴즈로</button>`);
+}
+
+function initQuiz(){
+  const sel=document.getElementById('dateSel');
+  const t=todayStr();
+  const dates=bankDates().slice().reverse();   /* 新しい日付が上 */
+  sel.innerHTML=dates.map(d=>`<option value="${d}">${d}${d===t?' (今日)':''}</option>`).join('');
+  const def=resolveDate(t);
+  sel.value=def;
+  sel.onchange=()=>loadQuizForDate(sel.value);
+  loadQuizForDate(def);
+}
+
+initQuiz();
 </script>
 </body>
 </html>
