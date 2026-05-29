@@ -189,6 +189,14 @@
   .rec-table tr.best td{background:#fff4d9}
   .best-badge{background:var(--gold);color:#fff;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
   .aux-empty{color:#7a6f5a;font-size:.9rem;line-height:1.8;margin-bottom:20px}
+  .star-btn{cursor:pointer;border:none;background:none;color:#cbbd99;padding:0 4px;line-height:1;transition:transform .12s,color .12s}
+  .star-btn:hover{transform:scale(1.18)}
+  .star-btn.on{color:var(--gold)}
+  .word-star{font-size:1.7rem;vertical-align:middle;margin-left:6px}
+  .rel-card{position:relative}
+  .rel-star{position:absolute;top:3px;right:4px;font-size:.95rem;cursor:pointer;background:none;border:none;color:#cbbd99;line-height:1;padding:0;transition:transform .12s,color .12s}
+  .rel-star:hover{transform:scale(1.2)}
+  .rel-star.on{color:var(--gold)}
 
   .result{display:none;text-align:center;padding:42px 24px}
   .result.show{display:block;animation:fade .6s}
@@ -213,16 +221,16 @@
 </header>
 
 <div class="tab-bar">
-  <button class="tab active" id="tabStudy" onclick="switchTab('study')">学習</button>
-  <button class="tab" id="tabQuiz" onclick="switchTab('quiz')">クイズ</button>
+  <button class="tab" id="tabStudy" onclick="switchTab('study')">学習</button>
+  <button class="tab active" id="tabQuiz" onclick="switchTab('quiz')">クイズ</button>
 </div>
 
-<div id="studyPanel" style="width:100%;max-width:720px">
+<div id="studyPanel" style="width:100%;max-width:720px;display:none">
   <div class="lesson-nav" id="lessonNav"></div>
   <div class="lesson-panel" id="lessonContent"></div>
 </div>
 
-<div id="quizPanel" style="width:100%;max-width:720px;display:none">
+<div id="quizPanel" style="width:100%;max-width:720px">
   <div class="topbar">
     <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
     <div class="score-pill">正解 <b id="scoreNow">0</b> / <span id="qTotal">0</span></div>
@@ -233,6 +241,7 @@
     <span style="flex:1"></span>
     <button class="mini-btn" onclick="renderHistory()">記録 ・ 기록</button>
     <button class="mini-btn" onclick="renderWrongNotes()">오답노트</button>
+    <button class="mini-btn" onclick="renderStars()">★ 별표</button>
   </div>
   <main class="card" id="card"></main>
   <div id="auxView" style="display:none"></div>
@@ -297,6 +306,31 @@ const RELATED = {
   "実":[{word:"実力",jp:"じつりょく",ko:"실력"},{word:"現実",jp:"げんじつ",ko:"현실"},{word:"実際",jp:"じっさい",ko:"실제"}],
   "温":[{word:"温度",jp:"おんど",ko:"온도"},{word:"温泉",jp:"おんせん",ko:"온천"},{word:"気温",jp:"きおん",ko:"기온"}],
   "存":[{word:"存在",jp:"そんざい",ko:"존재"},{word:"生存",jp:"せいぞん",ko:"생존"},{word:"保存",jp:"ほぞん",ko:"보존"}],
+};
+
+/* 単語ごとの関連語（同じ漢字を含む例）。WORD_BANK の各単語の word をキーにする。
+   毎日のルーティンで生成する新単語にも、この形で関連語を追加すること。 */
+const REL_BY_WORD = {
+  "学生":[{word:"学校",jp:"がっこう",ko:"학교"},{word:"学習",jp:"がくしゅう",ko:"학습"},{word:"生活",jp:"せいかつ",ko:"생활"}],
+  "図書":[{word:"地図",jp:"ちず",ko:"지도"},{word:"図形",jp:"ずけい",ko:"도형"},{word:"読書",jp:"どくしょ",ko:"독서"}],
+  "銀行":[{word:"銀河",jp:"ぎんが",ko:"은하"},{word:"行動",jp:"こうどう",ko:"행동"},{word:"行進",jp:"こうしん",ko:"행진"}],
+  "自由":[{word:"自然",jp:"しぜん",ko:"자연"},{word:"自動",jp:"じどう",ko:"자동"},{word:"理由",jp:"りゆう",ko:"이유"}],
+  "新聞":[{word:"新年",jp:"しんねん",ko:"신년"},{word:"新鮮",jp:"しんせん",ko:"신선"},{word:"最新",jp:"さいしん",ko:"최신"}],
+  "病院":[{word:"病室",jp:"びょうしつ",ko:"병실"},{word:"入院",jp:"にゅういん",ko:"입원"},{word:"退院",jp:"たいいん",ko:"퇴원"}],
+  "計画":[{word:"計算",jp:"けいさん",ko:"계산"},{word:"合計",jp:"ごうけい",ko:"합계"},{word:"映画",jp:"えいが",ko:"영화"}],
+  "旅行":[{word:"旅館",jp:"りょかん",ko:"여관"},{word:"旅費",jp:"りょひ",ko:"여비"},{word:"行動",jp:"こうどう",ko:"행동"}],
+  "約束":[{word:"予約",jp:"よやく",ko:"예약"},{word:"契約",jp:"けいやく",ko:"계약"},{word:"結束",jp:"けっそく",ko:"결속"}],
+  "能力":[{word:"可能",jp:"かのう",ko:"가능"},{word:"体力",jp:"たいりょく",ko:"체력"},{word:"努力",jp:"どりょく",ko:"노력"}],
+  "説明":[{word:"小説",jp:"しょうせつ",ko:"소설"},{word:"説得",jp:"せっとく",ko:"설득"},{word:"証明",jp:"しょうめい",ko:"증명"}],
+  "関係":[{word:"関心",jp:"かんしん",ko:"관심"},{word:"関連",jp:"かんれん",ko:"관련"},{word:"機関",jp:"きかん",ko:"기관"}],
+  "経済":[{word:"経験",jp:"けいけん",ko:"경험"},{word:"経営",jp:"けいえい",ko:"경영"},{word:"救済",jp:"きゅうさい",ko:"구제"}],
+  "政府":[{word:"政治",jp:"せいじ",ko:"정치"},{word:"政策",jp:"せいさく",ko:"정책"},{word:"行政",jp:"ぎょうせい",ko:"행정"}],
+  "文化":[{word:"文学",jp:"ぶんがく",ko:"문학"},{word:"作文",jp:"さくぶん",ko:"작문"},{word:"変化",jp:"へんか",ko:"변화"}],
+  "歴史":[{word:"経歴",jp:"けいれき",ko:"경력"},{word:"学歴",jp:"がくれき",ko:"학력"},{word:"歴代",jp:"れきだい",ko:"역대"}],
+  "安全":[{word:"安心",jp:"あんしん",ko:"안심"},{word:"安定",jp:"あんてい",ko:"안정"},{word:"完全",jp:"かんぜん",ko:"완전"}],
+  "健康":[{word:"健全",jp:"けんぜん",ko:"건전"},{word:"保健",jp:"ほけん",ko:"보건"},{word:"健闘",jp:"けんとう",ko:"건투"}],
+  "速度":[{word:"急速",jp:"きゅうそく",ko:"급속"},{word:"速達",jp:"そくたつ",ko:"속달"},{word:"制度",jp:"せいど",ko:"제도"}],
+  "注意":[{word:"注目",jp:"ちゅうもく",ko:"주목"},{word:"注文",jp:"ちゅうもん",ko:"주문"},{word:"意見",jp:"いけん",ko:"의견"}],
 };
 
 /* ============================================================
@@ -552,6 +586,23 @@ const REC_KEY='kqz_records_v1';
 function loadRecords(){ try{ return JSON.parse(localStorage.getItem(REC_KEY))||[]; }catch(e){ return []; } }
 function saveRecord(rec){ const a=loadRecords(); a.push(rec); try{ localStorage.setItem(REC_KEY, JSON.stringify(a)); }catch(e){} }
 
+/* ── localStorage 별표(お気に入り) ── */
+const STAR_KEY='kqz_stars_v1';
+function loadStars(){ try{ return JSON.parse(localStorage.getItem(STAR_KEY))||{}; }catch(e){ return {}; } }
+function saveStars(o){ try{ localStorage.setItem(STAR_KEY, JSON.stringify(o)); }catch(e){} }
+function isStarred(word){ return !!loadStars()[word]; }
+function toggleStar(word, jp, ko){
+  const s=loadStars();
+  if(s[word]){ delete s[word]; } else { s[word]={word, jp:jp||'', ko:ko||'', ts:Date.now()}; }
+  saveStars(s);
+  return !!s[word];
+}
+function toggleStarBtn(el, word, jp, ko){
+  const on=toggleStar(word, jp, ko);
+  el.textContent = on?'★':'☆';
+  el.classList.toggle('on', on);
+}
+
 /* ハングル合成（誤答が足りない場合の保険） */
 function makeSyllable(){
   const c=Math.floor(Math.random()*19), v=Math.floor(Math.random()*21);
@@ -729,15 +780,24 @@ function showLesson(key){
 })();
 
 function buildRelatedHTML(q){
-  const seen=new Set([q.word]);
-  const relWords=[];
-  for(const ch of q.word){
-    const list=RELATED[ch];
-    if(!list) continue;
-    for(const r of list){ if(!seen.has(r.word)){seen.add(r.word);relWords.push(r);} }
+  let relWords=[];
+  if(Array.isArray(q.rel) && q.rel.length){
+    relWords = q.rel.filter(r=>r.word!==q.word);
+  } else if(REL_BY_WORD[q.word]){
+    relWords = REL_BY_WORD[q.word].filter(r=>r.word!==q.word);
+  } else {
+    const seen=new Set([q.word]);
+    for(const ch of q.word){
+      const list=RELATED[ch];
+      if(!list) continue;
+      for(const r of list){ if(!seen.has(r.word)){seen.add(r.word);relWords.push(r);} }
+    }
   }
   if(relWords.length===0) return '';
-  const cards=relWords.map(r=>`<div class="rel-card"><span class="rel-kanji">${r.word}</span><span class="rel-jp">${r.jp}</span><span class="rel-ko">${r.ko}</span></div>`).join('');
+  const cards=relWords.map(r=>{
+    const on=isStarred(r.word);
+    return `<div class="rel-card"><button class="rel-star ${on?'on':''}" title="별표" onclick="event.stopPropagation();toggleStarBtn(this,'${r.word}','${r.jp}','${r.ko}')">${on?'★':'☆'}</button><span class="rel-kanji">${r.word}</span><span class="rel-jp">${r.jp}</span><span class="rel-ko">${r.ko}</span></div>`;
+  }).join('');
   return `<div class="related-words"><div class="related-label">同じ漢字が使われている単語 ・ <span style="font-family:'Noto Serif KR',serif;font-weight:600">같은 한자가 쓰인 단어</span></div><div class="rel-grid">${cards}</div></div>`;
 }
 
@@ -753,10 +813,9 @@ function render(){
     </div>
     <div class="prompt">
       <div class="lead">この単語の <b>韓国漢字音(ハングル)</b> はどれ？</div>
-      <span class="word">${q.word}</span>
+      <span class="word">${q.word}</span><button class="star-btn word-star ${isStarred(q.word)?'on':''}" title="별표 ・ お気に入り" onclick="toggleStarBtn(this,'${q.word}','${q.jp}','${q.answer}')">${isStarred(q.word)?'★':'☆'}</button>
       <div class="reading">
         <span class="jp-read">${q.jp}</span>
-        <span class="mean">意味：${q.mean}</span>
       </div>
       <div class="ask">正しい <em>한국 한자음</em> を1つ選んでください</div>
     </div>
@@ -828,6 +887,7 @@ function showResult(){
       <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
         <button class="mini-btn" onclick="renderHistory()">記録を見る ・ 기록</button>
         <button class="mini-btn" onclick="renderWrongNotes()">오답노트</button>
+        <button class="mini-btn" onclick="renderStars()">★ 별표</button>
       </div>
     </div>`;
   const rf=document.getElementById('ringFill');
@@ -899,6 +959,25 @@ function renderWrongNotes(){
       ).join('')+`</div>`;
   }
   showAux(`<h2>오답노트 ・ 間違えた単語</h2>${body}<button class="btn" style="margin-top:18px" onclick="backToQuiz()">← クイズに戻る ・ 퀴즈로</button>`);
+}
+
+function renderStars(){
+  const items=Object.values(loadStars()).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  let body;
+  if(!items.length){
+    body='<p class="aux-empty">별표한 단어가 없습니다. 퀴즈 단어나 관련 단어의 ☆를 누르면 여기에 모입니다.<br>★を押した単語がここに集まります。</p>';
+  } else {
+    body=`<p class="aux-empty" style="margin-bottom:14px">★ 별표한 단어 모음（★を再度押すと解除）・ お気に入り単語</p>`+
+      `<div class="rel-grid">`+items.map(w=>
+        `<div class="rel-card"><button class="rel-star on" title="별표 해제" onclick="event.stopPropagation();unstarFromList(this,'${w.word}')">★</button><span class="rel-kanji">${w.word}</span><span class="rel-jp">${w.jp||''}</span><span class="rel-ko">${w.ko||''}</span></div>`
+      ).join('')+`</div>`;
+  }
+  showAux(`<h2>별표 모아보기 ・ お気に入り</h2>${body}<button class="btn" style="margin-top:18px" onclick="backToQuiz()">← クイズに戻る ・ 퀴즈로</button>`);
+}
+function unstarFromList(el, word){
+  toggleStar(word);
+  const c=el.closest('.rel-card');
+  if(c) c.remove();
 }
 
 function initQuiz(){
