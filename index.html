@@ -197,6 +197,8 @@
   .rel-star{position:absolute;top:3px;right:4px;font-size:.95rem;cursor:pointer;background:none;border:none;color:#cbbd99;line-height:1;padding:0;transition:transform .12s,color .12s}
   .rel-star:hover{transform:scale(1.2)}
   .rel-star.on{color:var(--gold)}
+  .review-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+  .review-bar select{font-family:'Zen Maru Gothic';padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-size:.85rem;color:var(--ink)}
 
   .result{display:none;text-align:center;padding:42px 24px}
   .result.show{display:block;animation:fade .6s}
@@ -553,7 +555,7 @@ function normalizeBatch(arr){
   return (arr||[]).map(d=>{
     let wrong = d.wrong3 || d.wrong3b || d.wrong || [];
     wrong = wrong.filter(w=>w && w!==d.answer);
-    return {word:d.word, jp:d.jp, mean:d.mean, answer:d.answer, wrong, rule:d.rule, note:d.note, bd:d.bd};
+    return {word:d.word, jp:d.jp, mean:d.mean, answer:d.answer, wrong, rule:d.rule, note:d.note, bd:d.bd, rel:d.rel};
   });
 }
 
@@ -562,6 +564,7 @@ let total = 0;
 let idx=0, score=0, locked=false;
 let selectedDate = '';
 let currentWrong = [];           /* 今回の挑戦で間違えた単語 */
+let reviewMode = false;          /* 별표 복습 모드 */
 const card=document.getElementById('card');
 const pbar=document.getElementById('pbar');
 const scoreNow=document.getElementById('scoreNow');
@@ -656,7 +659,7 @@ const LESSONS_CONTENT = {
 <tr><td><span class="cn">⑦</span></td><td><span class="ck">ㅗ / ㅡ</span></td><td><span class="cj">お（う）</span></td><td class="ce"><b>古代</b> こだい・<span class="kr">고대</span>&emsp;<b>特別</b> とくべつ・<span class="kr">특별</span></td></tr>
 <tr><td><span class="cn">⑧</span></td><td><span class="ck">ㅛ</span></td><td><span class="cj">よう</span></td><td class="ce"><b>欲望</b> よくぼう・<span class="kr">욕망</span>&emsp;<b>要求</b> ようきゅう・<span class="kr">요구</span></td></tr>
 <tr><td><span class="cn">⑨</span></td><td><span class="ck">ㅜ</span></td><td><span class="cj">う</span></td><td class="ce"><b>運動</b> うんどう・<span class="kr">운동</span>&emsp;<b>武器</b> ぶき・<span class="kr">무기</span></td></tr>
-<tr><td><span class="cn">⑩</span></td><td><span class="ck">ㅠ</span></td><td><span class="cj">ゆう</span></td><td class="ce"><b>遊学</b> ゆうがく・<span class="kr">유학</span>&emsp;<b>流行</b> りゅうこう・<span class="kr">유행</span></td></tr>
+<tr><td><span class="cn">⑩</span></td><td><span class="ck">ㅠ</span></td><td><span class="cj">ゆう</span></td><td class="ce"><b>有名</b> ゆうめい・<span class="kr">유명</span>&emsp;<b>流行</b> りゅうこう・<span class="kr">유행</span></td></tr>
 </tbody></table>
 <div class="note-box"><span class="note-lbl">注意点</span><ul>
 <li>사/자/차（ㅏ母音 ＋ ㅅ/ㅈ/ㅊ初声）は <b>し/じ/しゃ</b> と読む ─ <b>使用</b> しよう・<span class="kr">사용</span>（사）, <b>自然</b> じねん・<span class="kr">자연</span>（자）, <b>借用</b> しゃくよう・<span class="kr">차용</span>（차）</li>
@@ -861,7 +864,7 @@ function onPick(btn,q){
 
 function showResult(){
   pbar.style.width='100%';
-  saveRecord({quizDate:selectedDate, ts:Date.now(), score, total, wrong:currentWrong.slice()});
+  saveRecord({quizDate: reviewMode?'★복습':selectedDate, ts:Date.now(), score, total, wrong:currentWrong.slice()});
   const pct=Math.round(score/total*100);
   let grade,msg;
   if(pct===100){grade='완벽! 만점이에요 🎉';msg='全問正解！ 한·일 한자음의 대응 감각이 완전히 잡혔네요.';}
@@ -899,6 +902,7 @@ function showResult(){
    出題日選択 ・ 記録 ・ 오답노트
    ============================================================ */
 function loadQuizForDate(dateKey){
+  reviewMode=false;
   selectedDate=dateKey;
   QUESTIONS=normalizeBatch(WORD_BANK[dateKey]);
   total=QUESTIONS.length;
@@ -907,6 +911,48 @@ function loadQuizForDate(dateKey){
   if(scoreNow) scoreNow.textContent=0;
   backToQuiz();
   render();
+}
+
+/* ── 별표 단어로 복습 클イズを作る ── */
+let _allByWord=null;
+function allByWord(){
+  if(_allByWord) return _allByWord;
+  _allByWord={};
+  bankDates().forEach(d=>{ normalizeBatch(WORD_BANK[d]).forEach(q=>{ if(!_allByWord[q.word]) _allByWord[q.word]=q; }); });
+  return _allByWord;
+}
+function buildReviewQuestions(words){
+  const idxMap=allByWord();
+  const pool=words.map(w=> idxMap[w.word]
+    ? Object.assign({}, idxMap[w.word])
+    : {word:w.word, jp:w.jp||'', mean:w.word, answer:w.ko||'', wrong:[], rule:'', note:'별표한 단어 복습입니다. ・ お気に入り単語の復習。', bd:[], rel:undefined});
+  pool.forEach(q=>{
+    if(!q.wrong || q.wrong.length<3){
+      const extra=pool.map(o=>o.answer).filter(a=>a && a!==q.answer && a.length===q.answer.length && !(q.wrong||[]).includes(a));
+      q.wrong=(q.wrong||[]).concat(extra).slice(0,3);
+    }
+  });
+  return pool;
+}
+function startReview(words){
+  if(!words.length) return;
+  QUESTIONS=buildReviewQuestions(words);
+  total=QUESTIONS.length;
+  document.getElementById('qTotal').textContent=total;
+  idx=0; score=0; currentWrong=[]; locked=false; reviewMode=true;
+  if(scoreNow) scoreNow.textContent=0;
+  backToQuiz();
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function startReviewFromUI(){
+  const sel=document.getElementById('reviewCount');
+  const n=sel?parseInt(sel.value,10):0;
+  const items=Object.values(loadStars());
+  if(!items.length||!n) return;
+  const a=items.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  startReview(a.slice(0,n));
 }
 
 function showAux(html){
@@ -967,7 +1013,14 @@ function renderStars(){
   if(!items.length){
     body='<p class="aux-empty">별표한 단어가 없습니다. 퀴즈 단어나 관련 단어의 ☆를 누르면 여기에 모입니다.<br>★を押した単語がここに集まります。</p>';
   } else {
-    body=`<p class="aux-empty" style="margin-bottom:14px">★ 별표한 단어 모음（★を再度押すと解除）・ お気に入り単語</p>`+
+    const opts=[5,10,15,20].filter(n=>n<=items.length);
+    if(!opts.includes(items.length)) opts.push(items.length);
+    const optHtml=opts.map(n=>`<option value="${n}">${n===items.length?'全'+n:n}問</option>`).join('');
+    const reviewBar=`<div class="review-bar"><b style="font-size:.85rem;color:var(--ink)">복습 문제 만들기 ・ 復習クイズ</b>`+
+      `<select id="reviewCount">${optHtml}</select>`+
+      `<button class="mini-btn" onclick="startReviewFromUI()">시작 ▶</button>`+
+      `<span style="font-size:.78rem;color:#9a8b73">별표 ${items.length}개 중에서 출제</span></div>`;
+    body=reviewBar+`<p class="aux-empty" style="margin-bottom:14px">★ 별표한 단어 모음（★を再度押すと解除）・ お気に入り単語</p>`+
       `<div class="rel-grid">`+items.map(w=>
         `<div class="rel-card"><button class="rel-star on" title="별표 해제" onclick="event.stopPropagation();unstarFromList(this,'${w.word}')">★</button><span class="rel-kanji">${w.word}</span><span class="rel-jp">${w.jp||''}</span><span class="rel-ko">${w.ko||''}</span></div>`
       ).join('')+`</div>`;
