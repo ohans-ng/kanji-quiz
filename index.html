@@ -1905,7 +1905,7 @@ function todayStr(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
-function bankDates(){ return Object.keys(WORD_BANK).sort(); }
+function bankDates(){ const t=todayStr(); return Object.keys(WORD_BANK).filter(d=>d<=t).sort(); }
 function resolveDate(pref){
   const dates=bankDates();
   if(!dates.length) return '';
